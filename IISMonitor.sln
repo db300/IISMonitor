@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iHawkIISLibrary", "iHawkIIS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IISMonitor.v1", "IISMonitor.v1\IISMonitor.v1.csproj", "{6ED72909-0BE7-4803-BFF1-EF120BD2A956}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IISMonitor.v2", "IISMonitor.v2\IISMonitor.v2.csproj", "{9EC91CFD-9DEA-44A6-AD52-32CF5AB139E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{6ED72909-0BE7-4803-BFF1-EF120BD2A956}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6ED72909-0BE7-4803-BFF1-EF120BD2A956}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6ED72909-0BE7-4803-BFF1-EF120BD2A956}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9EC91CFD-9DEA-44A6-AD52-32CF5AB139E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EC91CFD-9DEA-44A6-AD52-32CF5AB139E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EC91CFD-9DEA-44A6-AD52-32CF5AB139E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EC91CFD-9DEA-44A6-AD52-32CF5AB139E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
