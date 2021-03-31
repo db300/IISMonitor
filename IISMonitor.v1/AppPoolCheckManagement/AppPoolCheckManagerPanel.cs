@@ -44,7 +44,7 @@ namespace IISMonitor.AppPoolCheckManagement
         {
             // view button & tree
             var btnView = new Button {Parent = this, Location = new Point(15, 15), Size = new Size(200, 25), Text = @"查看", Anchor = AnchorStyles.Left | AnchorStyles.Top};
-            var tree = new AdSelectTreeView
+            var tree = new iHawkAppControl.iTreeView.AdSelectTreeView
             {
                 Parent = this,
                 Location = new Point(15, btnView.Bottom + 5),
