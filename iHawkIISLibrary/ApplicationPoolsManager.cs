@@ -28,6 +28,7 @@ namespace iHawkIISLibrary
         #endregion
 
         #region method
+
         [Obsolete]
         public static string[] Test()
         {
@@ -108,6 +109,23 @@ namespace iHawkIISLibrary
             catch (Exception ex)
             {
                 return $"fail: {name} {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 监测应用程序池并重启（如果停止）
+        /// </summary>
+        /// <param name="name">应用程序池名称</param>
+        public string CheckAndRestart(string name)
+        {
+            try
+            {
+                if (GetApplicationPoolState(name) == ObjectState.Started) return "";
+                return $"重启 {name}：{StartApplicationPool(name)}";
+            }
+            catch (Exception ex)
+            {
+                return $"{name} 监测或重启失败：{ex.Message}";
             }
         }
 
