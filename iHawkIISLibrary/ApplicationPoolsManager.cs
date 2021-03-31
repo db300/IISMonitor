@@ -5,6 +5,9 @@ using Microsoft.Web.Administration;
 
 namespace iHawkIISLibrary
 {
+    /// <summary>
+    /// 应用程序池管理器
+    /// </summary>
     public class ApplicationPoolsManager : IDisposable
     {
         #region constructor
