@@ -53,7 +53,7 @@ namespace iHawkIISLibrary
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return new List<string> {ex.Message};
+                return new List<string> { ex.Message };
             }
         }
 
@@ -97,13 +97,18 @@ namespace iHawkIISLibrary
             return _serverManager.ApplicationPools[index].Stop();
         }
 
-        public string CreateApplicationPool(string name)
+        /// <summary>
+        /// 创建应用程序池
+        /// </summary>
+        /// <param name="name">应用程序池名称</param>
+        /// <param name="managedRuntimeVersion">The version number of the .NET Framework that is used by the application pool. The default is "v4.0". 如果创建无托管代码，该参数为""</param>
+        public string CreateApplicationPool(string name, string managedRuntimeVersion = "v4.0")
         {
             try
             {
                 if (_serverManager.ApplicationPools.Any(applicationPool => applicationPool.Name == name)) return $"fail: {name} exists.";
                 var appPool = _serverManager.ApplicationPools.Add(name);
-                appPool.ManagedRuntimeVersion = "v4.0";
+                appPool.ManagedRuntimeVersion = managedRuntimeVersion;
                 appPool.Enable32BitAppOnWin64 = false;
                 appPool.ManagedPipelineMode = ManagedPipelineMode.Integrated;
                 _serverManager.CommitChanges();
