@@ -24,13 +24,9 @@ namespace IISMonitor
         #endregion
 
         #region property
-
-        private readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
-
         private FlowLayoutPanel _panel;
         private TextBox _txtLog4Opera;
         private TextBox _txtLog4Monitor;
-
         #endregion
 
         #region event handler
