@@ -1,0 +1,7 @@
+{
+  "ReleasePackDir": "releasepack",
+  "ReleaseUnpackDir": "deploy",
+  "AppPoolNamePrefix": "test",
+  "AppPoolNameSuffix": "AppPool",
+  "NetTagFileName": "appsettings.json"
+}
