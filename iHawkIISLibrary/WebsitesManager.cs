@@ -11,7 +11,6 @@ namespace iHawkIISLibrary
     public class WebsitesManager : IDisposable
     {
         #region constructor
-
         public WebsitesManager()
         {
             _serverManager = new ServerManager();
@@ -21,17 +20,13 @@ namespace iHawkIISLibrary
         {
             _serverManager.Dispose();
         }
-
         #endregion
 
         #region property
-
         private readonly ServerManager _serverManager;
-
         #endregion
 
         #region method
-
         public List<string> GetWebsiteList()
         {
             try
@@ -40,7 +35,7 @@ namespace iHawkIISLibrary
             }
             catch (Exception ex)
             {
-                return new List<string> {$"fail: {ex.Message}"};
+                return new List<string> { $"fail: {ex.Message}" };
             }
         }
 
@@ -62,6 +57,20 @@ namespace iHawkIISLibrary
             }
         }
 
+        public List<string> GetWebsiteApplicationList(string websiteName)
+        {
+            try
+            {
+                if (!_serverManager.Sites.Any(site => site.Name == websiteName)) return new List<string> { $"fail: {websiteName} no exists." };
+                var website = _serverManager.Sites[websiteName];
+                return website.Applications.Select(app => app.Path).ToList();
+            }
+            catch (Exception ex)
+            {
+                return new List<string> { $"fail: {ex.Message}" };
+            }
+        }
+
         public string CreateWebsiteApplication(string websiteName, string applicationPath, string applicationPhysicalPath, string applicationPoolName)
         {
             try
@@ -79,7 +88,6 @@ namespace iHawkIISLibrary
                 return $"fail: {websiteName}, {applicationPath}: {ex.Message}";
             }
         }
-
         #endregion
     }
 }
