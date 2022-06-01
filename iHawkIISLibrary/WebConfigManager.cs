@@ -44,6 +44,27 @@ namespace iHawkIISLibrary
             _serverManager.CommitChanges();
         }
 
+        public Dictionary<string, string> GetConnectionStrings(string websiteName, string virtualPath)
+        {
+            try
+            {
+                var dict = new Dictionary<string, string>();
+                var config = _serverManager.GetWebConfiguration(websiteName, virtualPath);
+                var section = config.GetSection("connectionStrings");
+                var collection = section.GetCollection();
+                foreach (var item in collection)
+                {
+                    dict.Add(item["name"].ToString(), item["connectionString"].ToString());
+                }
+                return dict;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+                return null;
+            }
+        }
+
         public string AddConnectionStrings(string websiteName, Dictionary<string, string> nameConnectionStringPair, bool clear)
         {
             try
