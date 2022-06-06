@@ -29,6 +29,8 @@ namespace Deployer
         private TextBox _txtReleasePackDir;
         private TextBox _txtReleaseUnpackDir;
         private TextBox _txtLog;
+        private iHawkAppControl.iTreeView.AdSelectTreeView _tvVirtualPath;
+        private TextBox _txtConnectString;
 
         private DeployConfigItem _deployConfigItem;
         #endregion
@@ -71,7 +73,7 @@ namespace Deployer
                 if (Config.EnableCreateTable) CreateTable((BackgroundWorker)work, Config.ConnectionString);
                 */
 
-                ((BackgroundWorker)work).ReportProgress(0, "INFO: 字由后台服务创建完成");
+                ((BackgroundWorker)work).ReportProgress(0, "INFO: 服务创建完成");
             };
             background.ProgressChanged += (work, ee) => { _txtLog.AppendText($"【{DateTime.Now}】{ee.UserState}\r\n"); };
             background.RunWorkerCompleted += (work, ee) => { };
@@ -82,29 +84,26 @@ namespace Deployer
 
         private void BtnViewConnectionString_Click(object sender, EventArgs e)
         {
-            string website = "";
-            List<string> virtualPathList = null;
-            using (var websitesManager = new iHawkIISLibrary.WebsitesManager())
-            {
-                var websites = websitesManager.GetWebsiteList();
-                if (websites.Count == 0)
-                {
-                    //work.ReportProgress(0, "ERROR: 默认网站不存在");
-                    return;
-                }
+            ViewConnectionStrings();
+        }
 
-                website = websites[0];
-                virtualPathList = websitesManager.GetWebsiteApplicationList(website);
-                virtualPathList.Remove("/");
-            }
-            using (var webConfigManager = new iHawkIISLibrary.WebConfigManager())
-            {
-                foreach(var path in virtualPathList)
-                {
-                    var dict = webConfigManager.GetConnectionStrings(website, path);
-                    System.Diagnostics.Debug.WriteLine(dict);
-                }
-            }
+        private void BtnSetConnectionString_Click(object sender, EventArgs e)
+        {
+            var dlg = new ConnectionStringsForm();
+            if (dlg.ShowDialog() != DialogResult.OK) return;
+            var dict = dlg.ConnectionStringDict;
+            if (!(dict?.Count > 0)) return;
+            WriteConnectionStrings(dict);
+        }
+
+        private void TvVirtualPath_BeforeCheck(object sender, TreeViewCancelEventArgs e)
+        {
+            if (e.Node.ForeColor == SystemColors.GrayText) e.Cancel = true;
+        }
+
+        private void TvVirtualPath_BeforeSelect(object sender, TreeViewCancelEventArgs e)
+        {
+            if (e.Node.ForeColor == SystemColors.GrayText) e.Cancel = true;
         }
         #endregion
 
@@ -172,6 +171,77 @@ namespace Deployer
                     }
                 }
                 work.ReportProgress(0, "INFO: applications create done.");
+            }
+        }
+
+        private void ViewConnectionStrings()
+        {
+            _tvVirtualPath.Nodes.Clear();
+            string website = "";
+            List<string> virtualPathList = null;
+            var sr = new StringBuilder();
+            using (var websitesManager = new iHawkIISLibrary.WebsitesManager())
+            {
+                var websites = websitesManager.GetWebsiteList();
+                if (websites.Count == 0)
+                {
+                    _txtConnectString.Text = "ERROR: 默认网站不存在";
+                    return;
+                }
+
+                website = websites[0];
+                virtualPathList = websitesManager.GetWebsiteApplicationList(website);
+                virtualPathList.Remove("/");
+            }
+            using (var webConfigManager = new iHawkIISLibrary.WebConfigManager())
+            {
+                foreach (var path in virtualPathList)
+                {
+                    var dict = webConfigManager.GetConnectionStrings(website, path);
+
+                    var treeNode = new TreeNode(path);
+                    _tvVirtualPath.Nodes.Add(treeNode);
+                    sr.AppendLine("==============================");
+                    sr.AppendLine(path);
+                    if (dict == null)
+                    {
+                        treeNode.ForeColor = SystemColors.GrayText;
+                        sr.AppendLine("暂时无法获取");
+                    }
+                    else
+                    {
+                        treeNode.Checked = true;
+                        foreach (var item in dict) sr.AppendLine($"{item.Key}: {item.Value}");
+                    }
+                    sr.AppendLine("------------------------------");
+                }
+            }
+            _txtConnectString.Text = sr.ToString();
+        }
+
+        private void WriteConnectionStrings(Dictionary<string, string> connectStringDict)
+        {
+            string website = "";
+            using (var websitesManager = new iHawkIISLibrary.WebsitesManager())
+            {
+                var websites = websitesManager.GetWebsiteList();
+                if (websites.Count == 0)
+                {
+                    _txtConnectString.Text = "ERROR: 默认网站不存在";
+                    return;
+                }
+
+                website = websites[0];
+            }
+            using (var webConfigManager = new iHawkIISLibrary.WebConfigManager())
+            {
+                foreach (TreeNode node in _tvVirtualPath.Nodes)
+                {
+                    if (!node.Checked) continue;
+                    var s = webConfigManager.AddConnectionStrings(website, node.Text, connectStringDict, true);
+                    _txtConnectString.AppendText($"INFO: {node.Text} set connectionStrings {s}\r\n");
+                }
+                _txtConnectString.AppendText("INFO: connectionStrings set done.\r\n");
             }
         }
 
@@ -268,6 +338,42 @@ namespace Deployer
                 Text = "快速查看"
             };
             btnViewConnectionString.Click += BtnViewConnectionString_Click;
+            var btnSetConnectionString = new Button
+            {
+                AutoSize = true,
+                Location = new Point(btnViewConnectionString.Right + 12, btnViewConnectionString.Top),
+                Parent = tpDbConnectionString,
+                Text = "批量设置"
+            };
+            btnSetConnectionString.Click += BtnSetConnectionString_Click;
+            _tvVirtualPath = new iHawkAppControl.iTreeView.AdSelectTreeView
+            {
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Bottom,
+                CheckBoxes = true,
+                Font = new Font(Font.FontFamily, 12),
+                FullRowSelect = true,
+                HideSelection = false,
+                ItemHeight = 25,
+                Location = new Point(btnViewConnectionString.Left, btnViewConnectionString.Bottom + 12),
+                Parent = tpDbConnectionString,
+                ShowLines = false,
+                Size = new Size(300, tpDbConnectionString.ClientSize.Height - 20 - btnViewConnectionString.Bottom - 12)
+            };
+            _tvVirtualPath.BeforeCheck += TvVirtualPath_BeforeCheck;
+            _tvVirtualPath.BeforeSelect += TvVirtualPath_BeforeSelect;
+            _txtConnectString = new TextBox
+            {
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
+                BackColor = Color.White,
+                Font = new Font(Font.FontFamily, 12),
+                Location = new Point(_tvVirtualPath.Right + 12, btnViewConnectionString.Bottom + 12),
+                Multiline = true,
+                Parent = tpDbConnectionString,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Both,
+                Size = new Size(tpDbConnectionString.ClientSize.Width - 20 - _tvVirtualPath.Right - 12, tpDbConnectionString.ClientSize.Height - 20 - btnViewConnectionString.Bottom - 12),
+                WordWrap = false
+            };
         }
         #endregion
     }

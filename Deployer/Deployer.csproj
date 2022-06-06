@@ -49,6 +49,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConnectionStringsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ConnectionStringsForm.Designer.cs">
+      <DependentUpon>ConnectionStringsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="DeployConfigItem.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -85,6 +91,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\iHawkApp\iHawkAppControl\iHawkAppControl.csproj">
+      <Project>{435283c0-b7a6-4b00-8ede-2576f7690841}</Project>
+      <Name>iHawkAppControl</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\iHawkApp\iHawkAppLibrary\iHawkAppLibrary.csproj">
       <Project>{3e9d08da-b91b-440a-9e7e-c57b04a7e80d}</Project>
       <Name>iHawkAppLibrary</Name>
