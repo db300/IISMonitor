@@ -91,11 +91,45 @@ namespace iHawkIISLibrary
             }
         }
 
-        public string AddAppSettings(string websiteName, Dictionary<string, string> keyValuePair, bool clear)
+        public Dictionary<string, string> GetAppSettings(string websiteName, string virtualPath)
         {
             try
             {
-                var config = _serverManager.GetWebConfiguration(websiteName, "");
+                var dict = new Dictionary<string, string>();
+                var config = _serverManager.GetWebConfiguration(websiteName, virtualPath);
+                var section = config.GetSection("appSettings");
+                var collection = section.GetCollection();
+                foreach (var item in collection)
+                {
+                    dict.Add(item["key"].ToString(), item["value"].ToString());
+                }
+                return dict;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+                return null;
+            }
+        }
+
+        public string GetAppSettingsJsonFileName(string websiteName, string virtualPath)
+        {
+            try
+            {
+                var physicalPath = _serverManager.Sites[websiteName].Applications[virtualPath].VirtualDirectories[0].PhysicalPath;
+                return physicalPath.EndsWith("\\") ? $"{physicalPath}appsettings.json" : $@"{physicalPath}\appsettings.json";
+            }
+            catch (Exception ex)
+            {
+                return $"fail: {ex.Message}";
+            }
+        }
+
+        public string AddAppSettings(string websiteName, string virtualPath, Dictionary<string, string> keyValuePair, bool clear)
+        {
+            try
+            {
+                var config = _serverManager.GetWebConfiguration(websiteName, virtualPath);
                 var section = config.GetSection("appSettings");
                 var collection = section.GetCollection();
                 if (clear) collection.Clear();
