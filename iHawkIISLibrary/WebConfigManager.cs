@@ -65,11 +65,11 @@ namespace iHawkIISLibrary
             }
         }
 
-        public string AddConnectionStrings(string websiteName, Dictionary<string, string> nameConnectionStringPair, bool clear)
+        public string AddConnectionStrings(string websiteName, string virtualPath, Dictionary<string, string> nameConnectionStringPair, bool clear)
         {
             try
             {
-                var config = _serverManager.GetWebConfiguration(websiteName, "");
+                var config = _serverManager.GetWebConfiguration(websiteName, virtualPath);
                 var section = config.GetSection("connectionStrings");
                 var collection = section.GetCollection();
                 if (clear) collection.Clear();
