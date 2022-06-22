@@ -96,7 +96,7 @@ namespace Deployer.Modules
             foreach (var file in zipFiles)
             {
                 work.ReportProgress(0, $"INFO: unpacking {file}");
-                var s = iHawkAppLibrary.SharpZip.DecomparessFile(file, _deployConfigItem.ReleaseUnpackDir);
+                var s = iHawkZipStdLibrary.SharpZip.DecomparessFile(file, _deployConfigItem.ReleaseUnpackDir);
                 work.ReportProgress(0, string.IsNullOrWhiteSpace(s) ? $"INFO: {file} unpack done." : $"ERROR: {file} unzip fail, {s}");
             }
             work.ReportProgress(0, "INFO: release packages unpack done.");
