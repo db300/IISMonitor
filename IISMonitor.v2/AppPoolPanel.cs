@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace IISMonitor
@@ -13,29 +7,25 @@ namespace IISMonitor
     public partial class AppPoolPanel : UserControl
     {
         #region constructor
-
         public AppPoolPanel()
         {
             InitializeComponent();
 
             InitUi();
         }
-
         #endregion
 
         #region property
-
-        private readonly Timer _timer = new Timer {Interval = 1000, Enabled = false};
+        private readonly Timer _timer = new Timer { Interval = 1000, Enabled = false };
 
         private string _appPoolName;
 
         private TextBox _txtAppPool;
-
+        private Button _btnMonitor;
         #endregion
 
         #region method
-
-        public void Update(string name)
+        public void Update(string name, bool startup)
         {
             _appPoolName = name;
             _txtAppPool.Text = name;
@@ -44,50 +34,60 @@ namespace IISMonitor
                 var s = AppSingleton.Apm.CheckAndRestart(name);
                 if (!string.IsNullOrWhiteSpace(s)) Notification?.Invoke(this, "Monitor", s);
             };
+            if (startup) Startup();
         }
 
+        private void Startup()
+        {
+            _timer.Enabled = true;
+            _btnMonitor.Text = @"停止";
+            _btnMonitor.BackColor = Color.LimeGreen;
+            Notification?.Invoke(this, "Opera", $"开启监测：{_appPoolName}");
+        }
+
+        private void Stop()
+        {
+            _timer.Enabled = false;
+            _btnMonitor.Text = @"监测";
+            _btnMonitor.BackColor = SystemColors.Control;
+            Notification?.Invoke(this, "Opera", $"停止监测：{_appPoolName}");
+        }
         #endregion
 
         #region event handler
-
         private void BtnMonitor_Click(object sender, EventArgs e)
         {
-            var buttonText = ((Button) sender).Text;
+            var buttonText = ((Button)sender).Text;
             switch (buttonText)
             {
                 case "监测":
-                    _timer.Enabled = true;
-                    ((Button) sender).Text = @"停止";
-                    Notification?.Invoke(this, "Opera", $"开启监测：{_appPoolName}");
+                    Startup();
                     break;
                 case "停止":
-                    _timer.Enabled = false;
-                    ((Button) sender).Text = @"监测";
-                    Notification?.Invoke(this, "Opera", $"停止监测：{_appPoolName}");
+                    Stop();
                     break;
             }
         }
 
         public delegate void NotificationHandler(object sender, string infoType, string info);
-
         public event NotificationHandler Notification;
-
         #endregion
 
         #region ui
-
         private void InitUi()
         {
             Height = 25;
 
-            var btnMonitor = new Button
+            _btnMonitor = new Button
             {
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                AutoSize = true,
+                BackColor = SystemColors.Control,
                 Parent = this,
                 Text = @"监测"
             };
-            btnMonitor.Location = new Point(ClientSize.Width - 10 - btnMonitor.Width, (ClientSize.Height - btnMonitor.Height) / 2);
-            btnMonitor.Click += BtnMonitor_Click;
+            _btnMonitor.Location = new Point(ClientSize.Width - 10 - _btnMonitor.Width, (ClientSize.Height - _btnMonitor.Height) / 2);
+            _btnMonitor.Click += BtnMonitor_Click;
 
             _txtAppPool = new TextBox
             {
@@ -95,11 +95,10 @@ namespace IISMonitor
                 Left = 10,
                 Parent = this,
                 ReadOnly = true,
-                Width = ClientSize.Width - 40 - btnMonitor.Left
+                Width = ClientSize.Width - 40 - _btnMonitor.Left
             };
             _txtAppPool.Location = new Point(10, (ClientSize.Height - _txtAppPool.Height) / 2);
         }
-
         #endregion
     }
 }

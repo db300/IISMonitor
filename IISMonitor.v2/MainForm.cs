@@ -1,11 +1,10 @@
-﻿using System;
+﻿using IISMonitor.Properties;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace IISMonitor
@@ -13,27 +12,28 @@ namespace IISMonitor
     public partial class MainForm : Form
     {
         #region constructor
-
         public MainForm()
         {
             InitializeComponent();
 
             InitUi();
-        }
 
+            Load += MainForm_Load;
+        }
         #endregion
 
         #region property
         private FlowLayoutPanel _panel;
         private TextBox _txtLog4Opera;
         private TextBox _txtLog4Monitor;
+
+        private const string startupConfigFile = "startup.ini";
+        private readonly List<string> _startupList = new List<string>();
         #endregion
 
-        #region event handler
-
-        private void BtnList_Click(object sender, EventArgs e)
+        #region method
+        private void RefreshPoolList()
         {
-            ((Button) sender).Enabled = false;
             var poolList = AppSingleton.Apm.GetApplicationPoolList();
             poolList.Sort();
             foreach (var pool in poolList)
@@ -57,18 +57,35 @@ namespace IISMonitor
                             break;
                     }
                 };
-                appPoolPanel.Update(pool);
+                appPoolPanel.Update(pool, _startupList.Contains(pool));
                 _panel.Controls.Add(appPoolPanel);
             }
         }
+        #endregion
 
+        #region event handler
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            if (File.Exists(startupConfigFile))
+            {
+                using (var sr = new StreamReader(startupConfigFile, Encoding.Unicode))
+                {
+                    var lines = sr.ReadToEnd().Split('\n').Select(a => a.Trim()).ToList();
+                    lines.RemoveAll(a => string.IsNullOrWhiteSpace(a));
+                    _startupList.AddRange(lines);
+                }
+            }
+
+            RefreshPoolList();
+        }
         #endregion
 
         #region ui
-
         private void InitUi()
         {
-            Text = @"IISMonitor";
+            Icon = Resources.Icons_Land_Vista_Hardware_Devices_Home_Server;
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = $"IISMonitor {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
 
             var panel0 = new Panel
             {
@@ -76,13 +93,6 @@ namespace IISMonitor
                 Parent = this,
                 Width = 350
             };
-            var btnList = new Button
-            {
-                Dock = DockStyle.Bottom,
-                Parent = panel0,
-                Text = @"刷新列表"
-            };
-            btnList.Click += BtnList_Click;
             _panel = new FlowLayoutPanel
             {
                 AutoScroll = true,
@@ -115,7 +125,6 @@ namespace IISMonitor
                 ReadOnly = true
             };
         }
-
         #endregion
     }
 }
