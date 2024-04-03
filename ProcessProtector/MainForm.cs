@@ -22,6 +22,7 @@ namespace ProcessProtector
         #endregion
 
         #region property
+        private const string Url4Readme = "https://www.yuque.com/lengda/eq8cm6/sfdxx2so95vy7wnv";
         private TabControl _tabControl;
         #endregion
 
@@ -54,6 +55,11 @@ namespace ProcessProtector
                 //_tabControl.TabPages.Remove(tabPage);
             }
         }
+
+        private void Link_Click(object sender, EventArgs e)
+        {
+            System.Diagnostics.Process.Start(Url4Readme);
+        }
         #endregion
 
         #region ui
@@ -83,11 +89,21 @@ namespace ProcessProtector
             var btnAdd = new Button
             {
                 AutoSize = true,
-                Location = new Point(Config.ControlMargin, Config.ControlMargin),
                 Parent = panel,
                 Text = "添加"
             };
+            btnAdd.Location = new Point(Config.ControlMargin, (panel.ClientSize.Height - btnAdd.Height) / 2);
             btnAdd.Click += BtnAdd_Click;
+
+            var link = new LinkLabel
+            {
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                AutoSize = true,
+                Parent = panel,
+                Text = "点击查看使用说明"
+            };
+            link.Location = new Point(panel.ClientSize.Width - Config.ControlMargin - link.Width, (panel.ClientSize.Height - link.Height) / 2);
+            link.Click += Link_Click;
         }
         #endregion
     }
