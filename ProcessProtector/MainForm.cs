@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ProcessProtector
@@ -24,6 +18,8 @@ namespace ProcessProtector
         #region property
         private const string Url4Readme = "https://www.yuque.com/lengda/eq8cm6/sfdxx2so95vy7wnv";
         private TabControl _tabControl;
+
+        private string _exitPassword = "";
         #endregion
 
         #region event handler
@@ -36,6 +32,37 @@ namespace ProcessProtector
             tabPage.Controls.Add(processPanel);
             _tabControl.TabPages.Add(tabPage);
             _tabControl.SelectedTab = tabPage;
+        }
+
+        private void BtnLock_Click(object sender, EventArgs e)
+        {
+            var txt = ((Button)sender).Text;
+            switch (txt)
+            {
+                case "退出加锁":
+                    {
+                        var passwordForm = new PasswordForm { Text = "锁定" };
+                        if (passwordForm.ShowDialog(this) != DialogResult.OK || string.IsNullOrWhiteSpace(passwordForm.Password)) return;
+                        _exitPassword = passwordForm.Password;
+                        ((Button)sender).Text = "退出解锁";
+                    }
+                    break;
+                case "退出解锁":
+                    {
+                        var passwordForm = new PasswordForm { Text = "解锁" };
+                        if (passwordForm.ShowDialog(this) != DialogResult.OK) return;
+                        if (_exitPassword == passwordForm.Password)
+                        {
+                            _exitPassword = "";
+                            ((Button)sender).Text = "退出加锁";
+                        }
+                        else
+                        {
+                            MessageBox.Show("密码错误，解锁失败", "提示");
+                        }
+                    }
+                    break;
+            }
         }
 
         private void ProcessPanel_Notification(object sender, ProcessProtectItem item)
@@ -60,13 +87,36 @@ namespace ProcessProtector
         {
             System.Diagnostics.Process.Start(Url4Readme);
         }
+
+        private void NotifyIcon_Click(object sender, EventArgs e)
+        {
+            Show();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            var tipForm = new ExitTipForm();
+            if (tipForm.ShowDialog() != DialogResult.OK) e.Cancel = true;
+            else if (tipForm.MinToNotify)
+            {
+                e.Cancel = true;
+                Hide();
+            }
+            else if (!string.IsNullOrWhiteSpace(_exitPassword))
+            {
+                MessageBox.Show("退出已加锁，请先解锁", "提示");
+                e.Cancel = true;
+            }
+        }
         #endregion
 
         #region ui
         private void InitUi()
         {
+            Icon = SystemIcons.Shield;
             StartPosition = FormStartPosition.CenterScreen;
             Text = $"进程守护器 {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
+            FormClosing += MainForm_FormClosing;
 
             var panel = new Panel
             {
@@ -82,6 +132,22 @@ namespace ProcessProtector
                 Parent = this
             };
             _tabControl.BringToFront();
+
+            var notifyIcon = new NotifyIcon
+            {
+                Icon = Icon,
+                Text = Text,
+                Visible = true
+            };
+            notifyIcon.Click += NotifyIcon_Click;
+
+            /*
+            var contextMenuStrip = new ContextMenuStrip();
+            var item1 = new ToolStripMenuItem("设置退出密码...");
+            contextMenuStrip.Items.AddRange(new ToolStripItem[] { item1 });
+            item1.Click += NotifyIconMenuItem1_Click;
+            notifyIcon.ContextMenuStrip = contextMenuStrip;
+            */
         }
 
         private void InitUi4Tool(Panel panel)
@@ -104,6 +170,15 @@ namespace ProcessProtector
             };
             link.Location = new Point(panel.ClientSize.Width - Config.ControlMargin - link.Width, (panel.ClientSize.Height - link.Height) / 2);
             link.Click += Link_Click;
+
+            var btnLock = new Button
+            {
+                AutoSize = true,
+                Parent = panel,
+                Text = "退出加锁"
+            };
+            btnLock.Location = new Point(link.Left - Config.ControlPadding - btnLock.Width, (panel.ClientSize.Height - btnLock.Height) / 2);
+            btnLock.Click += BtnLock_Click;
         }
         #endregion
     }

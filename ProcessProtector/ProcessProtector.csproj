@@ -49,11 +49,23 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="ExitTipForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ExitTipForm.Designer.cs">
+      <DependentUpon>ExitTipForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PasswordForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PasswordForm.Designer.cs">
+      <DependentUpon>PasswordForm.cs</DependentUpon>
     </Compile>
     <Compile Include="ProcessPanel.cs">
       <SubType>UserControl</SubType>
