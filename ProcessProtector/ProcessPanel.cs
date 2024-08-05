@@ -2,6 +2,7 @@
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -28,6 +29,40 @@ namespace ProcessProtector
 
         private readonly Timer _timer4Protect = new Timer { Interval = 1000, Enabled = false };
         private readonly ProcessProtectItem _processProtectItem = new ProcessProtectItem();
+        private readonly StrategyItem _strategyItem = new StrategyItem();
+        #endregion
+
+        #region method
+        private void DelayRestart(int seconds)
+        {
+            var timer = new Timer { Enabled = true, Interval = seconds * 1000 };
+            timer.Tick += (tt, ee) =>
+            {
+                timer.Enabled = false;
+                Process.Start(_processProtectItem.Path);
+                _timer4Protect.Enabled = true;
+            };
+        }
+
+        private void ExecuteScript(string scriptPath)
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c {scriptPath}",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using (Process process = Process.Start(startInfo))
+            {
+                using (StreamReader reader = process.StandardOutput)
+                {
+                    string result = reader.ReadToEnd();
+                    Console.WriteLine(result);
+                }
+            }
+        }
         #endregion
 
         #region event handler
@@ -49,11 +84,24 @@ namespace ProcessProtector
         {
             // 检查进程是否存在
             var isProcessRunning = Process.GetProcesses().Any(p => p.ProcessName == _processProtectItem.Name);
-            // 如果进程不存在，启动它
-            if (!isProcessRunning)
+            if (isProcessRunning) return;
+            // 如果进程不存在，执行策略
+            switch (_strategyItem.Method)
             {
-                _txtLog.AppendText($"【{DateTime.Now}】进程【{_processProtectItem.Name}】不存在，启动进程\r\n");
-                Process.Start(_processProtectItem.Path);
+                case 0://立即重启
+                    _txtLog.AppendText($"【{DateTime.Now}】进程【{_processProtectItem.Name}】不存在，启动进程\r\n");
+                    Process.Start(_processProtectItem.Path);
+                    break;
+                case 1://延迟重启
+                    _txtLog.AppendText($"【{DateTime.Now}】进程【{_processProtectItem.Name}】不存在，延迟{_strategyItem.DelaySeconds}秒启动进程\r\n");
+                    _timer4Protect.Enabled = false;
+                    DelayRestart(_strategyItem.DelaySeconds);
+                    break;
+                case 2://执行脚本
+                    _txtLog.AppendText($"【{DateTime.Now}】进程【{_processProtectItem.Name}】不存在，执行脚本后启动进程\r\n");
+                    ExecuteScript(_strategyItem.ScriptFileName);
+                    Process.Start(_processProtectItem.Path);
+                    break;
             }
         }
 
@@ -82,6 +130,16 @@ namespace ProcessProtector
         {
             _timer4Protect.Enabled = false;
             Close?.Invoke(this);
+        }
+
+        private void BtnStrategy_Click(object sender, EventArgs e)
+        {
+            var strategyForm = new StrategyForm { StrategyItem = _strategyItem };
+            if (strategyForm.ShowDialog() != DialogResult.OK) return;
+            var strategyItem = strategyForm.StrategyItem;
+            _strategyItem.Method = strategyItem.Method;
+            _strategyItem.DelaySeconds = strategyItem.DelaySeconds;
+            _strategyItem.ScriptFileName = strategyItem.ScriptFileName;
         }
         #endregion
 
@@ -137,6 +195,16 @@ namespace ProcessProtector
             };
             btnClose.Location = new Point(ClientSize.Width - Config.ControlMargin - btnClose.Width, _btnStart.Top);
             btnClose.Click += BtnClose_Click;
+
+            var btnStrategy = new Button
+            {
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                AutoSize = true,
+                Parent = this,
+                Text = "守护策略"
+            };
+            btnStrategy.Location = new Point(btnClose.Left - Config.ControlPadding - btnStrategy.Width, _btnStart.Top);
+            btnStrategy.Click += BtnStrategy_Click;
 
             _txtLog = new TextBox
             {

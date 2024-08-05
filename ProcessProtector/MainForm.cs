@@ -173,6 +173,7 @@ namespace ProcessProtector
 
             var btnLock = new Button
             {
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
                 AutoSize = true,
                 Parent = panel,
                 Text = "退出加锁"
