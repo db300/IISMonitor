@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("iHawkIISLibrary")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("DavidHawkes")]
+[assembly: AssemblyCompany("ColdDaddy")]
 [assembly: AssemblyProduct("iHawkIISLibrary")]
-[assembly: AssemblyCopyright("Copyright © DavidHawkes 2015")]
+[assembly: AssemblyCopyright("Copyright © ColdDaddy 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
