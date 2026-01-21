@@ -1,7 +1,7 @@
 ﻿using System.Drawing;
 using System.Windows.Forms;
 
-namespace ProcessProtector
+namespace ProcessProtector.Modules
 {
     /// <summary>
     /// 密码窗口

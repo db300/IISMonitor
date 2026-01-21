@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProcessProtector.Entities;
+using System;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
@@ -6,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace ProcessProtector
+namespace ProcessProtector.Modules
 {
     public partial class ProcessPanel : UserControl
     {

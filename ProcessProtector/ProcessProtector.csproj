@@ -49,10 +49,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
-    <Compile Include="ExitTipForm.cs">
+    <Compile Include="Modules\ExitTipForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ExitTipForm.Designer.cs">
+    <Compile Include="Modules\ExitTipForm.Designer.cs">
       <DependentUpon>ExitTipForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MainForm.cs">
@@ -61,28 +61,28 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="PasswordForm.cs">
+    <Compile Include="Modules\PasswordForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="PasswordForm.Designer.cs">
+    <Compile Include="Modules\PasswordForm.Designer.cs">
       <DependentUpon>PasswordForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="ProcessPanel.cs">
+    <Compile Include="Modules\ProcessPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="ProcessPanel.Designer.cs">
+    <Compile Include="Modules\ProcessPanel.Designer.cs">
       <DependentUpon>ProcessPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="ProcessProtectItem.cs" />
+    <Compile Include="Entities\ProcessProtectItem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StrategyForm.cs">
+    <Compile Include="Modules\StrategyForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="StrategyForm.Designer.cs">
+    <Compile Include="Modules\StrategyForm.Designer.cs">
       <DependentUpon>StrategyForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="StrategyItem.cs" />
+    <Compile Include="Entities\StrategyItem.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

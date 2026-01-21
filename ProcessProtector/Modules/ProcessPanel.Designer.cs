@@ -1,4 +1,4 @@
-﻿namespace ProcessProtector
+﻿namespace ProcessProtector.Modules
 {
     partial class ProcessPanel
     {
