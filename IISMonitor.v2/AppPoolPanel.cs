@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using NLog;
 
 namespace IISMonitor
 {
@@ -16,6 +17,8 @@ namespace IISMonitor
         #endregion
 
         #region property
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
         private readonly Timer _timer = new Timer { Interval = 1000, Enabled = false };
 
         private string _appPoolName;
@@ -31,8 +34,19 @@ namespace IISMonitor
             _txtAppPool.Text = name;
             _timer.Tick += (tt, ee) =>
             {
-                var s = AppSingleton.Apm.CheckAndRestart(name);
-                if (!string.IsNullOrWhiteSpace(s)) Notification?.Invoke(this, "Monitor", s);
+                try
+                {
+                    var s = AppSingleton.Apm.CheckAndRestart(name);
+                    if (!string.IsNullOrWhiteSpace(s))
+                    {
+                        Logger.Warn("应用程序池 {0} 状态异常，执行重启：{1}", name, s);
+                        Notification?.Invoke(this, "Monitor", s);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "监测应用程序池 {0} 时发生异常", name);
+                }
             };
             if (startup) Startup();
         }
@@ -42,6 +56,7 @@ namespace IISMonitor
             _timer.Enabled = true;
             _btnMonitor.Text = @"停止";
             _btnMonitor.BackColor = Color.LimeGreen;
+            Logger.Info("开启监测：{0}", _appPoolName);
             Notification?.Invoke(this, "Opera", $"开启监测：{_appPoolName}");
         }
 
@@ -50,6 +65,7 @@ namespace IISMonitor
             _timer.Enabled = false;
             _btnMonitor.Text = @"监测";
             _btnMonitor.BackColor = SystemColors.Control;
+            Logger.Info("停止监测：{0}", _appPoolName);
             Notification?.Invoke(this, "Opera", $"停止监测：{_appPoolName}");
         }
         #endregion

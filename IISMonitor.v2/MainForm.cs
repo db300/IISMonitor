@@ -1,4 +1,5 @@
 ﻿using IISMonitor.Properties;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -23,6 +24,8 @@ namespace IISMonitor
         #endregion
 
         #region property
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
         private FlowLayoutPanel _panel;
         private TextBox _txtLog4Opera;
         private TextBox _txtLog4Monitor;
@@ -36,6 +39,7 @@ namespace IISMonitor
         {
             var poolList = AppSingleton.Apm.GetApplicationPoolList();
             poolList.Sort();
+            Logger.Info("获取到 {0} 个应用程序池", poolList.Count);
             foreach (var pool in poolList)
             {
                 var appPoolPanel = new AppPoolPanel
@@ -74,9 +78,21 @@ namespace IISMonitor
                     lines.RemoveAll(a => string.IsNullOrWhiteSpace(a));
                     _startupList.AddRange(lines);
                 }
+                Logger.Info("加载启动配置，自动监测列表：{0}", string.Join(", ", _startupList));
+            }
+            else
+            {
+                Logger.Warn("启动配置文件 {0} 不存在", startupConfigFile);
             }
 
-            RefreshPoolList();
+            try
+            {
+                RefreshPoolList();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "刷新应用程序池列表失败");
+            }
         }
         #endregion
 
