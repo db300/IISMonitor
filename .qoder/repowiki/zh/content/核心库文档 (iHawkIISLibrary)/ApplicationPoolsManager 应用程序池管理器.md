@@ -8,10 +8,18 @@
 - [AppPoolPanel.cs](file://IISMonitor.v2/AppPoolPanel.cs)
 - [MainForm.cs](file://IISMonitor.v2/MainForm.cs)
 - [AppSingleton.cs](file://IISMonitor.v2/AppSingleton.cs)
+- [NLog.config](file://IISMonitor.v2/NLog.config)
 - [iHawkIISLibrary.csproj](file://iHawkIISLibrary/iHawkIISLibrary.csproj)
 - [packages.config](file://iHawkIISLibrary/packages.config)
 - [README.md](file://README.md)
 </cite>
+
+## 更新摘要
+**变更内容**
+- 增强了状态检查和重启机制的错误处理能力
+- 改进了日志记录系统，集成了NLog框架
+- 优化了异常处理策略，提供更详细的错误信息
+- 增强了应用程序池监控的可靠性
 
 ## 目录
 1. [简介](#简介)
@@ -28,7 +36,7 @@
 
 ApplicationPoolsManager 是 iHawkIISLibrary 库中的核心类，专门负责管理 IIS 应用程序池的各种操作。该类提供了完整的应用程序池生命周期管理功能，包括获取应用程序池列表、查询应用程序池状态、启动和停止应用程序池、创建新应用程序池以及自动重启监控等关键功能。
 
-该项目是 IIS 监控和操作桌面软件的重要组成部分，为 IIS 环境下的应用程序池管理提供了统一的 API 接口。
+该项目是 IIS 监控和操作桌面软件的重要组成部分，为 IIS 环境下的应用程序池管理提供了统一的 API 接口。最新的增强功能包括改进的状态检查机制、更好的错误处理和完整的日志记录系统。
 
 ## 项目结构
 
@@ -47,6 +55,7 @@ WSM[WebsitesManager]
 end
 subgraph "外部依赖"
 MWA[Microsoft.Web.Administration]
+NLOG[NLog 日志框架]
 NET[.NET Framework 4.7.2]
 end
 V2 --> APM
@@ -55,13 +64,17 @@ V2 --> WSM
 APM --> MWA
 WCM --> MWA
 WSM --> MWA
+APM --> NLOG
+V2 --> NLOG
 MWA --> NET
+NLOG --> NET
 ```
 
 **图表来源**
 - [ApplicationPoolsManager.cs](file://iHawkIISLibrary/ApplicationPoolsManager.cs#L1-L143)
 - [WebConfigManager.cs](file://iHawkIISLibrary/WebConfigManager.cs#L1-L157)
 - [WebsitesManager.cs](file://iHawkIISLibrary/WebsitesManager.cs#L1-L94)
+- [NLog.config](file://IISMonitor.v2/NLog.config#L1-L40)
 
 **章节来源**
 - [README.md](file://README.md#L1-L10)
@@ -77,6 +90,8 @@ ApplicationPoolsManager 类是整个系统的核心，它继承自 IDisposable �
 - **应用程序池控制**：启动、停止应用程序池
 - **应用程序池创建**：动态创建新的应用程序池
 - **自动监控重启**：监控应用程序池状态并自动重启停止的服务
+- **增强错误处理**：提供详细的异常信息和错误恢复机制
+- **集成日志记录**：通过NLog框架提供完整的日志记录功能
 
 ### 关键属性和方法
 
@@ -132,7 +147,7 @@ WebsitesManager --> ServerManager : 使用
 
 ## 架构概览
 
-ApplicationPoolsManager 在整个 IIS 监控系统中扮演着关键角色，与桌面应用界面紧密集成：
+ApplicationPoolsManager 在整个 IIS 监控系统中扮演着关键角色，与桌面应用界面紧密集成，并通过NLog框架提供完整的日志记录功能：
 
 ```mermaid
 sequenceDiagram
@@ -141,6 +156,7 @@ participant Panel as AppPoolPanel
 participant Singleton as AppSingleton
 participant Manager as ApplicationPoolsManager
 participant IIS as IIS ServerManager
+participant Logger as NLog Logger
 UI->>Panel : 用户点击"监测"按钮
 Panel->>Singleton : 获取 ApplicationPoolsManager 实例
 Singleton->>Manager : 返回共享实例
@@ -152,18 +168,19 @@ Manager-->>Panel : 返回空字符串
 else 应用程序池已停止
 Manager->>IIS : 启动应用程序池
 IIS-->>Manager : ObjectState 值
+Manager->>Logger : 记录重启操作
 Manager-->>Panel : 返回重启结果消息
 end
 Panel->>UI : 触发通知事件
 ```
 
 **图表来源**
-- [AppPoolPanel.cs](file://IISMonitor.v2/AppPoolPanel.cs#L28-L54)
+- [AppPoolPanel.cs](file://IISMonitor.v2/AppPoolPanel.cs#L43-L58)
 - [AppSingleton.cs](file://IISMonitor.v2/AppSingleton.cs#L9-L12)
 - [ApplicationPoolsManager.cs](file://iHawkIISLibrary/ApplicationPoolsManager.cs#L127-L138)
 
 **章节来源**
-- [AppPoolPanel.cs](file://IISMonitor.v2/AppPoolPanel.cs#L1-L105)
+- [AppPoolPanel.cs](file://IISMonitor.v2/AppPoolPanel.cs#L1-L127)
 - [MainForm.cs](file://IISMonitor.v2/MainForm.cs#L35-L63)
 
 ## 详细组件分析
@@ -186,7 +203,7 @@ Panel->>UI : 触发通知事件
 - **异常处理**：直接访问集合元素，可能抛出 IndexOutOfRangeException 或 ArgumentException
 
 **章节来源**
-- [ApplicationPoolsManager.cs](file://iHawkIISLibrary/ApplicationPoolsManager.cs#L47-L68)
+- [ApplicationPoolsManager.cs](file://iHawkIISLibrary/ApplicationPoolsManager.cs#L60-L68)
 
 ### 应用程序池状态查询
 
@@ -238,7 +255,7 @@ Panel->>UI : 触发通知事件
 **章节来源**
 - [ApplicationPoolsManager.cs](file://iHawkIISLibrary/ApplicationPoolsManager.cs#L100-L121)
 
-### 自动监控重启功能
+### 增强的自动监控重启功能
 
 #### CheckAndRestart 方法
 - **功能**：监控应用程序池状态并在需要时自动重启
@@ -253,6 +270,12 @@ Panel->>UI : 触发通知事件
   2. 如果已启动则返回空字符串
   3. 如果已停止则尝试启动并返回结果
   4. 捕获并报告任何异常
+- **增强功能**：
+  - 改进的异常处理机制
+  - 更详细的错误信息反馈
+  - 集成日志记录功能
+
+**更新** 增强了错误处理和日志记录能力
 
 **章节来源**
 - [ApplicationPoolsManager.cs](file://iHawkIISLibrary/ApplicationPoolsManager.cs#L123-L138)
@@ -303,6 +326,7 @@ ApplicationPoolsManager 依赖于多个外部组件和内部模块：
 graph LR
 subgraph "外部依赖"
 MWA[Microsoft.Web.Administration.dll]
+NLOG[NLog 6.1.0]
 NET[.NET Framework 4.7.2]
 end
 subgraph "内部模块"
@@ -319,12 +343,16 @@ WSM --> MWA
 APP --> APM
 MAIN --> APM
 SINGLE --> APM
+APM --> NLOG
+APP --> NLOG
 MWA --> NET
+NLOG --> NET
 ```
 
 **图表来源**
 - [iHawkIISLibrary.csproj](file://iHawkIISLibrary/iHawkIISLibrary.csproj#L34-L36)
 - [packages.config](file://iHawkIISLibrary/packages.config#L3)
+- [NLog.config](file://IISMonitor.v2/NLog.config#L1-L40)
 
 **章节来源**
 - [iHawkIISLibrary.csproj](file://iHawkIISLibrary/iHawkIISLibrary.csproj#L34-L36)
@@ -337,6 +365,15 @@ MWA --> NET
 - **用途**：提供 IIS 管理 API 访问能力
 - **架构**：MSIL（可移植可执行文件）
 
+#### NLog 日志框架
+- **版本**：6.1.0
+- **用途**：提供结构化日志记录功能
+- **特性**：
+  - 文件日志记录（Info、Warn、Error级别）
+  - 自动日志轮转（按大小限制）
+  - 异步日志写入
+  - 内部日志管理
+
 #### .NET Framework
 - **目标框架**：v4.7.2
 - **最低要求**：v4.5
@@ -345,6 +382,7 @@ MWA --> NET
 **章节来源**
 - [iHawkIISLibrary.csproj](file://iHawkIISLibrary/iHawkIISLibrary.csproj#L12-L14)
 - [iHawkIISLibrary.csproj](file://iHawkIISLibrary/iHawkIISLibrary.csproj#L16-L32)
+- [NLog.config](file://IISMonitor.v2/NLog.config#L1-L40)
 
 ## 性能考虑
 
@@ -355,11 +393,16 @@ MWA --> NET
 ### 异常处理策略
 - **局部异常捕获**：每个方法都包含 try-catch 块，防止单个操作失败影响整个系统
 - **错误信息返回**：异常被捕获后转换为用户友好的错误消息字符串
-- **日志记录**：部分异常通过 Console.WriteLine 输出到控制台
+- **日志记录**：通过 NLog 框架提供结构化的日志记录，支持不同级别的日志输出
 
 ### 并发访问
 - **线程安全**：ServerManager 实例不是线程安全的，多线程环境下需要额外的同步机制
 - **建议**：在桌面应用环境中，通常由 UI 线程调用这些方法，避免并发问题
+
+### 日志记录优化
+- **异步日志写入**：NLog 支持异步日志记录，减少对主应用程序的影响
+- **日志轮转**：自动日志文件轮转，避免磁盘空间无限增长
+- **级别过滤**：不同级别的日志分别写入不同的文件，便于问题排查
 
 ## 故障排除指南
 
@@ -388,19 +431,34 @@ MWA --> NET
 - 重启 IIS 服务
 - 运行 iisreset 命令重置 IIS
 
+#### 日志记录问题
+**症状**：日志文件未生成或记录异常
+**原因**：NLog 配置错误或权限问题
+**解决方案**：
+- 检查 NLog.config 配置文件
+- 确认应用程序有写入日志目录的权限
+- 验证日志文件路径的有效性
+
 ### 调试技巧
 
 #### 启用详细日志
-- 在开发环境中，可以修改异常处理逻辑，将错误信息输出到调试窗口
-- 使用 Debug.WriteLine 替代 Console.WriteLine 进行调试输出
+- 使用 NLog 的不同日志级别进行调试
+- 查看 Info、Warn、Error 级别的日志文件
+- 利用日志轮转功能进行长期调试
 
 #### 测试连接
 - 使用 Test() 方法（已标记为 Obsolete）验证 IIS 连接是否正常
 - 检查 ServerManager 是否能够正确访问 IIS 配置
 
+#### 监控重启机制
+- 观察应用程序池状态变化
+- 检查重启操作的日志记录
+- 验证异常处理机制的有效性
+
 **章节来源**
 - [ApplicationPoolsManager.cs](file://iHawkIISLibrary/ApplicationPoolsManager.cs#L35-L45)
 - [WebConfigManager.cs](file://iHawkIISLibrary/WebConfigManager.cs#L34-L45)
+- [NLog.config](file://IISMonitor.v2/NLog.config#L1-L40)
 
 ## 结论
 
@@ -411,11 +469,21 @@ ApplicationPoolsManager 类为 IIS 应用程序池管理提供了完整而实用
 - **易于使用**：简洁的 API 设计，方法命名直观易懂
 - **健壮性**：全面的异常处理和错误恢复机制
 - **性能优化**：合理的资源管理和操作优化
+- **增强的日志记录**：通过 NLog 提供完整的日志记录功能
+- **改进的错误处理**：提供更详细的错误信息和更好的用户体验
 
 ### 使用建议
 - 在生产环境中始终检查返回值和异常信息
 - 根据应用程序的实际需求配置托管版本和管道模式
 - 定期监控应用程序池状态，及时发现和解决问题
 - 在多线程环境中注意线程安全问题
+- 利用 NLog 日志系统进行问题诊断和性能监控
+- 配置适当的日志轮转策略以管理磁盘空间
 
-该类作为 IISMonitor 桌面应用的核心组件，为用户提供了一个可靠、高效的 IIS 应用程序池管理解决方案。
+### 最新增强功能
+- **改进的状态检查**：更可靠的监控机制和错误处理
+- **增强的错误处理**：提供详细的异常信息和恢复机制
+- **完整的日志记录**：通过 NLog 框架提供结构化的日志输出
+- **更好的用户体验**：清晰的操作反馈和问题诊断信息
+
+该类作为 IISMonitor 桌面应用的核心组件，为用户提供了一个可靠、高效且具有完善日志记录功能的 IIS 应用程序池管理解决方案。

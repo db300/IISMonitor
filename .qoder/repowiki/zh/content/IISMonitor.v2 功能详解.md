@@ -16,6 +16,14 @@
 - [AppPoolCheckManagerPanel.cs](file://IISMonitor.v1/AppPoolCheckManagement/AppPoolCheckManagerPanel.cs)
 </cite>
 
+## 更新摘要
+**变更内容**
+- 新增全面的日志记录系统（NLog）实现
+- 添加全局异常处理机制的详细分析
+- 增强应用程序池监控功能的日志记录
+- 完善启动配置文件支持的实现细节
+- 更新单例模式在进程管理中的应用说明
+
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -32,11 +40,17 @@
 
 IISMonitor.v2 是一个专为监控和管理 IIS 应用程序池而设计的桌面应用程序。该版本在保持核心功能的同时，采用了更加简洁直观的用户界面设计理念，并通过单例模式优化了进程管理效率。
 
+**最新重大更新**：本版本在日志记录系统方面进行了全面增强，包括：
+- **NLog 日志框架集成**：实现结构化的日志记录系统
+- **全局异常处理机制**：多层次的异常防护体系
+- **启动配置文件支持**：支持应用程序池的自动启动管理
+- **增强的应用程序池监控功能**：完善的监控日志记录
+
 本版本的核心特色包括：
 - **简化界面设计**：采用极简主义设计，专注于核心功能
 - **单例模式应用**：通过全局单例管理 IIS 操作
 - **实时监控系统**：基于定时器的自动检测机制
-- **双通道日志记录**：分离操作日志和监控日志
+- **全面日志记录**：分离操作日志和监控日志，支持全局异常处理
 - **智能启动配置**：支持应用程序池的自动启动管理
 
 ## 项目结构
@@ -70,7 +84,7 @@ Program --> MainForm
 - [IISMonitor.v2.csproj](file://IISMonitor.v2/IISMonitor.v2.csproj#L56-L106)
 
 **章节来源**
-- [IISMonitor.v2.csproj](file://IISMonitor.v2/IISMonitor.v2.csproj#L1-L109)
+- [IISMonitor.v2.csproj](file://IISMonitor.v2/IISMonitor.v2.csproj#L1-L113)
 
 ## 核心组件
 
@@ -82,6 +96,7 @@ Program --> MainForm
 - **面板管理**：动态创建和管理应用程序池面板
 - **日志显示**：分离显示操作日志和监控日志
 - **配置加载**：读取启动配置文件
+- **全局异常处理**：集成 NLog 全局异常捕获机制
 
 ### 应用程序池面板 (AppPoolPanel)
 
@@ -91,6 +106,7 @@ Program --> MainForm
 - **状态指示**：通过按钮颜色变化显示监控状态
 - **事件通知**：向主窗体报告监控结果
 - **用户交互**：提供启动/停止监控的控制按钮
+- **异常处理**：内置异常捕获和日志记录机制
 
 ### 应用单例 (AppSingleton)
 
@@ -101,8 +117,8 @@ Program --> MainForm
 - **生命周期管理**：统一管理 IIS 连接
 
 **章节来源**
-- [MainForm.cs](file://IISMonitor.v2/MainForm.cs#L12-L131)
-- [AppPoolPanel.cs](file://IISMonitor.v2/AppPoolPanel.cs#L7-L105)
+- [MainForm.cs](file://IISMonitor.v2/MainForm.cs#L12-L147)
+- [AppPoolPanel.cs](file://IISMonitor.v2/AppPoolPanel.cs#L7-L127)
 - [AppSingleton.cs](file://IISMonitor.v2/AppSingleton.cs#L9-L13)
 
 ## 架构概览
@@ -124,6 +140,7 @@ end
 subgraph "系统服务"
 IIS[IIS 服务器<br/>Microsoft.Web.Administration]
 FileSystem[文件系统<br/>配置文件, 日志]
+NLog[NLog 日志框架<br/>全局异常处理]
 end
 UI --> Controller
 Controller --> Singleton
@@ -131,6 +148,7 @@ Singleton --> APManager
 APManager --> IIS
 UI --> FileSystem
 Controller --> FileSystem
+UI --> NLog
 ```
 
 **图表来源**
@@ -264,6 +282,103 @@ Note over Panel,IIS : 监控循环持续进行
 3. **状态反馈**：通过颜色变化直观显示当前状态
 4. **事件通知**：向主窗体报告监控结果
 
+### 全局异常处理机制
+
+**重大更新**：IISMonitor.v2 实现了完整的全局异常处理机制，确保应用程序的稳定性和可靠性。
+
+```mermaid
+flowchart TD
+Start([应用程序启动]) --> SetupHandlers["设置全局异常处理器"]
+SetupHandlers --> RunApp["运行主窗体"]
+RunApp --> NormalOp["正常运行"]
+RunApp --> ThreadEx["UI线程异常"]
+RunApp --> DomainEx["应用程序域异常"]
+RunApp --> FatalEx["致命异常"]
+NormalOp --> Shutdown["正常关闭"]
+ThreadEx --> LogThreadEx["记录UI线程异常"]
+DomainEx --> LogDomainEx["记录应用程序域异常"]
+FatalEx --> LogFatalEx["记录致命异常"]
+LogThreadEx --> Shutdown
+LogDomainEx --> Shutdown
+LogFatalEx --> Shutdown
+Shutdown --> End([应用程序退出])
+```
+
+**图表来源**
+- [Program.cs](file://IISMonitor.v2/Program.cs#L21-L50)
+
+#### 异常处理层次
+
+1. **UI线程异常**：`Application.ThreadException` 处理
+2. **应用程序域异常**：`AppDomain.CurrentDomain.UnhandledException` 处理
+3. **致命异常**：主方法 try-catch 处理
+4. **面板内部异常**：AppPoolPanel 内部 try-catch 处理
+
+#### 异常处理特点
+
+- **多层次保护**：从应用程序域到UI线程的全方位保护
+- **详细日志记录**：所有异常都会被记录到日志文件
+- **优雅降级**：异常不会导致应用程序崩溃
+- **用户友好**：致命异常会显示友好的错误消息
+
+**章节来源**
+- [Program.cs](file://IISMonitor.v2/Program.cs#L42-L50)
+
+### 增强的日志记录系统
+
+**重大更新**：IISMonitor.v2 的日志记录系统经过全面增强，提供了更完善的问题诊断和追踪能力。
+
+```mermaid
+graph TB
+subgraph "日志类型"
+OperaLog[操作日志<br/>用户操作记录]
+MonitorLog[监控日志<br/>系统监控记录]
+GlobalLog[全局日志<br/>异常和系统事件]
+end
+subgraph "日志目标"
+InfoFile[Info 文件<br/>日期_信息.log]
+WarnFile[Warn 文件<br/>日期_警告.log]
+ErrorFile[Error 文件<br/>日期_错误.log]
+FatalFile[Fatal 文件<br/>日期_fatal.log]
+end
+subgraph "日志级别"
+Debug(Debug)
+Info(Info)
+Warn(Warn)
+Error(Error)
+Fatal(Fatal)
+Trace(Trace)
+end
+OperaLog --> InfoFile
+MonitorLog --> InfoFile
+GlobalLog --> ErrorFile
+GlobalLog --> FatalFile
+OperaLog --> WarnFile
+MonitorLog --> ErrorFile
+```
+
+**图表来源**
+- [NLog.config](file://IISMonitor.v2/NLog.config#L31-L46)
+
+#### 日志配置特点
+
+- **按级别分类**：不同级别的日志写入不同文件
+- **自动轮转**：基于日期的文件命名策略
+- **异步写入**：避免阻塞主应用程序
+- **可配置性**：支持通过配置文件调整日志行为
+- **异常追踪**：支持异常堆栈信息的完整记录
+
+#### 日志记录增强功能
+
+1. **全局异常日志**：Program.cs 中的全局异常处理
+2. **面板异常日志**：AppPoolPanel 中的监控异常处理
+3. **操作日志分离**：用户操作和系统监控的独立日志
+4. **详细异常信息**：包含异常类型、消息和堆栈跟踪
+
+**章节来源**
+- [MainForm.cs](file://IISMonitor.v2/MainForm.cs#L48-L59)
+- [NLog.config](file://IISMonitor.v2/NLog.config#L1-L40)
+
 ### 配置文件管理
 
 系统支持多种配置文件来满足不同的使用需求：
@@ -281,7 +396,7 @@ SkipConfig --> End
 ```
 
 **图表来源**
-- [MainForm.cs](file://IISMonitor.v2/MainForm.cs#L67-L77)
+- [MainForm.cs](file://IISMonitor.v2/MainForm.cs#L67-L87)
 
 #### 配置文件格式
 
@@ -289,48 +404,6 @@ SkipConfig --> End
 - **编码**：Unicode
 - **格式**：每行一个应用程序池名称
 - **用途**：指定默认启动监控的应用程序池
-
-### 日志记录系统
-
-IISMonitor.v2 实现了双通道日志记录系统：
-
-```mermaid
-graph TB
-subgraph "日志类型"
-OperaLog[操作日志<br/>用户操作记录]
-MonitorLog[监控日志<br/>系统监控记录]
-end
-subgraph "日志目标"
-InfoFile[Info 文件<br/>日期_信息.log]
-WarnFile[Warn 文件<br/>日期_警告.log]
-ErrorFile[Error 文件<br/>日期_错误.log]
-end
-subgraph "日志级别"
-Debug(Debug)
-Info(Info)
-Warn(Warn)
-Error(Error)
-Fatal(Fatal)
-end
-OperaLog --> InfoFile
-MonitorLog --> InfoFile
-OperaLog --> WarnFile
-MonitorLog --> ErrorFile
-```
-
-**图表来源**
-- [NLog.config](file://IISMonitor.v2/NLog.config#L31-L46)
-
-#### 日志配置特点
-
-- **按级别分类**：不同级别的日志写入不同文件
-- **自动轮转**：基于日期的文件命名策略
-- **异步写入**：避免阻塞主应用程序
-- **可配置性**：支持通过配置文件调整日志行为
-
-**章节来源**
-- [MainForm.cs](file://IISMonitor.v2/MainForm.cs#L48-L59)
-- [NLog.config](file://IISMonitor.v2/NLog.config#L1-L48)
 
 ## 依赖关系分析
 
@@ -358,6 +431,7 @@ MainForm --> WinForms
 AppPoolPanel --> WinForms
 MainForm --> NLog
 AppPoolPanel --> NLog
+Program --> NLog
 ```
 
 **图表来源**
@@ -386,18 +460,21 @@ AppPoolPanel --> NLog
 1. **连接池优化**：单例模式避免了重复创建 IIS 连接
 2. **内存管理**：及时释放定时器和事件处理器
 3. **UI 线程优化**：避免长时间操作阻塞用户界面
+4. **日志性能优化**：异步日志写入避免阻塞主线程
 
 ### 监控效率
 
 1. **定时器粒度**：1 秒间隔平衡了响应性和性能
 2. **批量更新**：UI 更新采用异步方式
 3. **错误处理**：异常不影响整体监控流程
+4. **异常隔离**：单个面板的异常不影响其他面板
 
 ### 扩展性设计
 
 1. **模块化架构**：易于添加新的监控功能
 2. **事件驱动**：支持插件化的通知机制
 3. **配置驱动**：通过配置文件调整行为
+4. **日志可扩展**：支持自定义日志目标和格式
 
 ## 故障排除指南
 
@@ -445,6 +522,20 @@ AppPoolPanel --> NLog
 2. 确保磁盘空间充足
 3. 关闭占用日志文件的程序
 
+#### 异常处理问题
+
+**症状**：异常没有被正确记录或应用程序崩溃
+
+**可能原因**：
+- 全局异常处理器未正确设置
+- 日志配置文件损坏
+- NLog 框架异常
+
+**解决步骤**：
+1. 检查 Program.cs 中的异常处理器设置
+2. 验证 NLog.config 配置文件
+3. 查看内部日志文件 (internalLogLevel="Off")
+
 **章节来源**
 - [ApplicationPoolsManager.cs](file://iHawkIISLibrary/ApplicationPoolsManager.cs#L127-L138)
 - [NLog.config](file://IISMonitor.v2/NLog.config#L31-L46)
@@ -458,7 +549,8 @@ AppPoolPanel --> NLog
 | **界面设计** | 多标签页复杂界面 | 简洁列表式界面 |
 | **监控方式** | 手动触发监控 | 自动定时监控 |
 | **配置管理** | 内置配置界面 | 外部配置文件 |
-| **日志系统** | 弹窗提示 | 分离日志文件 |
+| **日志系统** | 弹窗提示 | 分离日志文件，支持全局异常处理 |
+| **异常处理** | 基础异常处理 | 全局异常处理机制 |
 | **扩展性** | 功能集成 | 模块化设计 |
 
 ### 使用场景对比
@@ -475,7 +567,8 @@ AppPoolPanel --> NLog
 - 专注于应用程序池监控
 - 需要简洁直观的用户界面
 - 需要长期稳定的后台监控
-- 需要详细的日志记录
+- 需要详细的日志记录和异常处理
+- 需要可靠的全局异常防护
 
 ### 迁移建议
 
@@ -488,31 +581,36 @@ AppPoolPanel --> NLog
 2. **准备迁移环境**
    - 备份 v1 的配置和数据
    - 准备启动配置文件 (startup.ini)
+   - 确保系统满足 v2 的依赖要求
 
 3. **执行迁移步骤**
    - 安装 v2 应用程序
    - 配置应用程序池监控列表
    - 测试监控功能
+   - 验证日志记录功能
 
 4. **验证迁移结果**
    - 确认所有应用程序池都被正确监控
    - 验证日志记录功能
    - 测试自动重启功能
+   - 验证全局异常处理机制
 
 #### 数据迁移注意事项
 
 - **配置文件**：v2 使用 startup.ini 替代内置配置
 - **日志格式**：v2 采用文件日志替代弹窗提示
 - **监控范围**：v2 专注于应用程序池监控
+- **异常处理**：v2 提供更完善的异常处理机制
 
 ### 决策依据
 
 #### 选择 IISMonitor.v2 的理由
 
 1. **简化使用**：更直观的用户界面
-2. **稳定可靠**：经过优化的监控机制
-3. **易于维护**：清晰的代码结构和配置
-4. **性能优异**：高效的资源利用
+2. **稳定可靠**：经过优化的监控机制和全局异常处理
+3. **易于维护**：清晰的代码结构和完善的日志系统
+4. **性能优异**：高效的资源利用和异步日志处理
+5. **安全性高**：多层次的异常防护机制
 
 #### 选择 IISMonitor.v1 的理由
 
@@ -527,7 +625,7 @@ AppPoolPanel --> NLog
 
 ## 结论
 
-IISMonitor.v2 通过精心设计的简化界面和高效的单例模式，在保持核心功能的同时显著提升了用户体验和系统性能。其模块化架构为未来的功能扩展奠定了良好基础。
+IISMonitor.v2 通过精心设计的简化界面和高效的单例模式，在保持核心功能的同时显著提升了用户体验和系统性能。特别是新增的全局异常处理机制和增强的日志记录系统，为应用程序的稳定运行提供了强有力的保障。
 
 ### 主要优势
 
@@ -535,6 +633,7 @@ IISMonitor.v2 通过精心设计的简化界面和高效的单例模式，在保
 2. **技术实现优秀**：单例模式确保资源高效利用
 3. **用户体验优良**：直观的界面设计和清晰的状态反馈
 4. **维护成本低**：清晰的代码结构和完善的日志系统
+5. **稳定性强**：多层次的异常处理机制确保系统稳定运行
 
 ### 发展前景
 
@@ -543,5 +642,6 @@ IISMonitor.v2 为后续版本的功能扩展提供了良好的技术基础，包
 - 增强告警通知机制
 - 提供更丰富的报表功能
 - 支持远程监控管理
+- 进一步优化日志记录和异常处理
 
-对于需要稳定可靠的 IIS 应用程序池监控解决方案的用户，IISMonitor.v2 是理想的选择。而对于需要综合管理功能的高级用户，IISMonitor.v1 仍然是一个优秀的替代方案。
+对于需要稳定可靠的 IIS 应用程序池监控解决方案的用户，IISMonitor.v2 是理想的选择。其完善的异常处理机制和详细的日志记录功能，特别适合需要长期稳定运行的企业级应用场景。而对于需要综合管理功能的高级用户，IISMonitor.v1 仍然是一个优秀的替代方案。
